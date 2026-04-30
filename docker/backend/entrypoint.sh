@@ -21,16 +21,10 @@ wait_for_mysql() {
   done
 }
 
-prepare_laravel_runtime() {
-  if [ ! -f "${RUNTIME_DIR}/artisan" ]; then
-    echo "Inisialisasi Laravel baru di ${RUNTIME_DIR}..."
-    rm -rf "${RUNTIME_DIR:?}/"*
-    composer create-project laravel/laravel "${RUNTIME_DIR}"
-  fi
+copy_domain_source() {
+  echo "Menyalin source Air Bersih ke runtime Laravel..."
 
-  cd "${RUNTIME_DIR}"
-
-  composer require laravel/sanctum
+  mkdir -p "${RUNTIME_DIR}/app" "${RUNTIME_DIR}/database/migrations" "${RUNTIME_DIR}/database/seeders" "${RUNTIME_DIR}/routes" "${RUNTIME_DIR}/bootstrap"
 
   cp -R "${DOMAIN_DIR}/app/Http" "${RUNTIME_DIR}/app/"
   cp -R "${DOMAIN_DIR}/app/Models" "${RUNTIME_DIR}/app/"
@@ -38,6 +32,31 @@ prepare_laravel_runtime() {
   cp -R "${DOMAIN_DIR}/database/seeders/." "${RUNTIME_DIR}/database/seeders/"
   cp "${DOMAIN_DIR}/routes/api.php" "${RUNTIME_DIR}/routes/api.php"
   cp "${DOMAIN_DIR}/bootstrap/app.php" "${RUNTIME_DIR}/bootstrap/app.php"
+}
+
+install_sanctum_if_needed() {
+  cd "${RUNTIME_DIR}"
+
+  if ! composer show laravel/sanctum >/dev/null 2>&1; then
+    echo "Menginstal Laravel Sanctum..."
+    composer require laravel/sanctum
+  else
+    echo "Laravel Sanctum sudah terinstal."
+    composer dump-autoload
+  fi
+}
+
+prepare_laravel_runtime() {
+  if [ ! -f "${RUNTIME_DIR}/artisan" ]; then
+    echo "Inisialisasi Laravel baru di ${RUNTIME_DIR}..."
+    rm -rf "${RUNTIME_DIR:?}/"*
+    composer create-project laravel/laravel "${RUNTIME_DIR}"
+  fi
+
+  copy_domain_source
+  install_sanctum_if_needed
+
+  cd "${RUNTIME_DIR}"
 
   if [ ! -f "${RUNTIME_DIR}/.env" ]; then
     cp "${RUNTIME_DIR}/.env.example" "${RUNTIME_DIR}/.env"
@@ -97,6 +116,8 @@ wait_for_mysql
 
 if [ ! -f "${BOOTSTRAP_FLAG}" ]; then
   prepare_laravel_runtime
+else
+  copy_domain_source
 fi
 
 sync_env
