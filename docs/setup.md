@@ -37,3 +37,13 @@ npm run android
 - Kecamatan: `kecamatan@airbersih.test` / `password`
 - Desa: `desa@airbersih.test` / `password`
 - Petugas: `petugas@airbersih.test` / `password`
+
+## Opsi Docker
+
+Jika ingin langsung jalan di VM tanpa install PHP, Composer, dan Node manual, gunakan stack Docker di root repo:
+
+```bash
+docker compose up -d --build
+```
+
+Panduan import ke VM GCP ada di `docs/docker-gcp-vm.md`.
