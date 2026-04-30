@@ -1,3 +1,26 @@
 # Air Bersih Management
 
 Monorepo aplikasi pengelolaan air bersih untuk kecamatan, desa, dan petugas lapangan.
+
+## Struktur
+
+- `backend/`: REST API bergaya Laravel + Sanctum + MySQL
+- `frontend-web/`: React Vite untuk operator kecamatan dan desa
+- `mobile-field/`: React Native untuk petugas lapangan Android
+- `docs/`: arsitektur, setup, dan dokumentasi endpoint
+
+## Modul Inti
+
+1. Manajemen pelanggan air bersih
+2. Pencatatan meter air bulanan
+3. Generate tagihan otomatis dari pemakaian meter
+4. Penagihan dan penerimaan pembayaran
+5. Gangguan dan keluhan pelanggan
+6. Laporan keuangan desa dan kecamatan
+7. Dashboard monitoring operasional
+
+## Catatan Implementasi
+
+Container ini tidak menyediakan `php` dan `composer`, sehingga source code backend Laravel tidak dapat dieksekusi langsung di sini. Namun struktur proyek, file aplikasi, seed data, dan dokumentasi setup sudah disiapkan agar bisa langsung dilanjutkan di environment development penuh.
+
+Lihat [docs/architecture.md](/workspace/air-bersih-management/docs/architecture.md) dan [docs/setup.md](/workspace/air-bersih-management/docs/setup.md).

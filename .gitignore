@@ -1,0 +1,18 @@
+# Backend
+backend/.env
+backend/vendor/
+backend/storage/
+backend/bootstrap/cache/
+
+# Frontend Web
+frontend-web/node_modules/
+frontend-web/dist/
+
+# Mobile Field
+mobile-field/node_modules/
+mobile-field/android/.gradle/
+mobile-field/android/app/build/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
