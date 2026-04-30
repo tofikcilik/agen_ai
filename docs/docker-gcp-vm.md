@@ -6,12 +6,14 @@ Dokumen ini menyiapkan cara paling praktis untuk menjalankan repo ini di Docker 
 
 - `mysql`: database MySQL 8
 - `backend`: container PHP 8.3 yang otomatis membuat runtime Laravel penuh saat pertama kali start
-- `frontend-web`: container Node yang menjalankan React Vite
+- `gateway`: Nginx sebagai web server frontend statis sekaligus reverse proxy ke backend API
 
 Catatan penting:
 
 - Folder `backend/` di repo ini adalah source domain Laravel-style, belum full instalasi Laravel.
 - Saat Docker backend pertama kali hidup, entrypoint akan membuat runtime Laravel lengkap di folder host `backend-runtime/`, lalu menyalin source domain dari `backend/` ke runtime tersebut.
+- Frontend React dibuild menjadi aset statis saat image gateway dibuat.
+- Backend tidak dipublish langsung ke internet; trafik masuk lewat Nginx.
 - Mobile React Native tetap dijalankan terpisah dan tidak dicontainerkan di stack ini.
 
 ## Prasyarat di VM GCP
@@ -78,11 +80,12 @@ Saat pertama kali jalan:
 - Laravel runtime dibuat di `backend-runtime/`
 - Sanctum di-install otomatis
 - Migration dan seeder dijalankan otomatis
+- Frontend dibuild ke mode production lalu disajikan oleh Nginx
 
 ## Akses Aplikasi
 
-- Backend API: `http://IP_VM:8000`
-- Frontend Web: `http://IP_VM:5173`
+- Frontend Web: `http://IP_VM`
+- Backend API: `http://IP_VM/api`
 
 ## Demo Login
 
@@ -94,15 +97,15 @@ Saat pertama kali jalan:
 
 Izinkan TCP:
 
-- `5173` untuk frontend
-- `8000` untuk backend API
+- `80` untuk frontend dan reverse proxy API
+- `443` jika nanti Anda tambah SSL
 - `3306` hanya jika Anda memang perlu akses MySQL dari luar VM
 
 Contoh:
 
 ```bash
 gcloud compute firewall-rules create airbersih-web \
-  --allow tcp:5173,tcp:8000 \
+  --allow tcp:80,tcp:443 \
   --target-tags airbersih-server
 ```
 
@@ -148,3 +151,4 @@ docker compose up -d --build
 
 - Untuk development jangka panjang, Anda bisa lanjut memindahkan semua source dari `backend/` ke `backend-runtime/` setelah bootstrap pertama, lalu menjadikannya instalasi Laravel utama.
 - Pendekatan saat ini sengaja dipilih agar repo yang sekarang tetap bisa hidup di Docker tanpa harus menyusun seluruh skeleton Laravel secara manual di container ini.
+- Jika Anda ingin mode production yang lebih keras lagi, langkah berikutnya adalah menambah SSL certificate, memindahkan backend ke `php-fpm`, dan menjalankan queue worker terpisah.
