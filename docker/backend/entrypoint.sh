@@ -8,7 +8,15 @@ BOOTSTRAP_FLAG="${RUNTIME_DIR}/.airbersih_bootstrapped"
 wait_for_mysql() {
   echo "Menunggu MySQL siap..."
 
-  until mysqladmin ping -h"${DB_HOST}" -P"${DB_PORT}" -u"${DB_USERNAME}" -p"${DB_PASSWORD}" --silent; do
+  until mysqladmin ping \
+    --protocol=tcp \
+    -h"${DB_HOST}" \
+    -P"${DB_PORT}" \
+    -u"${DB_USERNAME}" \
+    -p"${DB_PASSWORD}" \
+    --ssl=0 \
+    --silent; do
+    echo "MySQL belum siap atau koneksi SSL internal ditolak, mencoba lagi..."
     sleep 3
   done
 }
