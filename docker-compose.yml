@@ -1,0 +1,67 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: airbersih-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: air_bersih_management
+      MYSQL_USER: airbersih
+      MYSQL_PASSWORD: airbersih123
+      MYSQL_ROOT_PASSWORD: root123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    container_name: airbersih-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      APP_NAME: "Air Bersih Management"
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: air_bersih_management
+      DB_USERNAME: airbersih
+      DB_PASSWORD: airbersih123
+      SANCTUM_STATEFUL_DOMAINS: localhost:5173,127.0.0.1:5173
+      SESSION_DOMAIN: localhost
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/opt/domain-backend:ro
+      - ./backend-runtime:/var/www/html
+
+  frontend-web:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    container_name: airbersih-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000/api
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend-web:/app
+      - frontend_node_modules:/app/node_modules
+
+volumes:
+  mysql_data:
+  frontend_node_modules:
