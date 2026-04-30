@@ -52,14 +52,14 @@ sync_env() {
       "APP_NAME" => getenv("APP_NAME") ?: "Air Bersih Management",
       "APP_ENV" => getenv("APP_ENV") ?: "local",
       "APP_DEBUG" => getenv("APP_DEBUG") ?: "true",
-      "APP_URL" => getenv("APP_URL") ?: "http://localhost:8000",
+      "APP_URL" => getenv("APP_URL") ?: "http://localhost",
       "DB_CONNECTION" => getenv("DB_CONNECTION") ?: "mysql",
       "DB_HOST" => getenv("DB_HOST") ?: "mysql",
       "DB_PORT" => getenv("DB_PORT") ?: "3306",
       "DB_DATABASE" => getenv("DB_DATABASE") ?: "air_bersih_management",
       "DB_USERNAME" => getenv("DB_USERNAME") ?: "airbersih",
       "DB_PASSWORD" => getenv("DB_PASSWORD") ?: "airbersih123",
-      "SANCTUM_STATEFUL_DOMAINS" => getenv("SANCTUM_STATEFUL_DOMAINS") ?: "localhost:5173,127.0.0.1:5173",
+      "SANCTUM_STATEFUL_DOMAINS" => getenv("SANCTUM_STATEFUL_DOMAINS") ?: "localhost,127.0.0.1",
       "SESSION_DOMAIN" => getenv("SESSION_DOMAIN") ?: "localhost",
     ];
     $contents = file_exists($envFile) ? file_get_contents($envFile) : "";
