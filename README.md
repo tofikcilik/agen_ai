@@ -21,13 +21,13 @@ Monorepo aplikasi pengelolaan air bersih untuk kecamatan, desa, dan petugas lapa
 
 ## Catatan Implementasi
 
-Container ini tidak menyediakan `php` dan `composer`, sehingga source code backend Laravel tidak dapat dieksekusi langsung di sini. Namun struktur proyek, file aplikasi, seed data, dan dokumentasi setup sudah disiapkan agar bisa langsung dilanjutkan di environment development penuh.
+Container ini tidak menyediakan `php`, `composer`, dan `docker`, sehingga saya tidak bisa menyalakan stack runtime langsung dari environment kerja ini. Namun source code, stack Docker production-style, dan dokumentasi deploy sudah disiapkan agar bisa langsung dijalankan di VM development atau GCP.
 
-Lihat [docs/architecture.md](/workspace/air-bersih-management/docs/architecture.md) dan [docs/setup.md](/workspace/air-bersih-management/docs/setup.md).
+Lihat [docs/architecture.md](/workspace/agen_ai/docs/architecture.md) dan [docs/setup.md](/workspace/agen_ai/docs/setup.md).
 
 ## Jalankan dengan Docker
 
-Stack Docker untuk VM GCP sudah disiapkan di root repo:
+Stack production-style untuk VM GCP sudah disiapkan di root repo:
 
 ```bash
 docker compose up -d --build
