@@ -1,0 +1,10 @@
+.git
+.gitignore
+node_modules
+vendor
+dist
+backend-runtime
+frontend-web/node_modules
+mobile-field/node_modules
+output
+memory
