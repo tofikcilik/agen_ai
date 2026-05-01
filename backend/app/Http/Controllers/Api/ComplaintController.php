@@ -20,7 +20,7 @@ class ComplaintController extends Controller
 
         return response()->json(
             $this->scopeComplaints(
-                Complaint::query()->with('customer.village', 'customer.village.district')->latest(),
+                Complaint::query()->with('customer.village.district', 'village.district')->latest(),
                 $user
             )->paginate($this->perPage())
         );
@@ -29,16 +29,26 @@ class ComplaintController extends Controller
     public function store(StoreComplaintRequest $request): JsonResponse
     {
         $user = $request->user()->loadMissing('role');
-        $customer = Customer::findOrFail($request->integer('customer_id'));
-        $this->ensureCustomerAccess($user, $customer);
+        $data = $request->validated();
+        $customer = null;
+
+        if (! empty($data['customer_id'])) {
+            $customer = Customer::with('village')->findOrFail($data['customer_id']);
+            $this->ensureCustomerAccess($user, $customer);
+        } elseif (! empty($data['village_id'])) {
+            $this->ensureVillageAccess($user, (int) $data['village_id']);
+        }
 
         $complaint = Complaint::create([
-            ...$request->validated(),
+            ...$data,
+            'village_id' => $data['village_id'] ?? $customer?->village_id,
+            'reporter_phone' => $data['reporter_phone'] ?? $customer?->phone,
+            'category' => $data['category'] ?? 'lainnya',
             'reported_by' => $user?->id,
             'status' => 'baru',
         ]);
 
-        return response()->json($complaint->load('customer.village'), 201);
+        return response()->json($complaint->load('customer.village.district', 'village.district'), 201);
     }
 
     public function updateStatus(UpdateComplaintStatusRequest $request, Complaint $complaint): JsonResponse
@@ -52,6 +62,6 @@ class ComplaintController extends Controller
             'handled_at' => now(),
         ]);
 
-        return response()->json($complaint->fresh('customer.village'));
+        return response()->json($complaint->fresh('customer.village.district', 'village.district'));
     }
 }
