@@ -34,6 +34,7 @@ npm run android
 
 ## Demo User
 
+- Administrator: `admin@airbersih.test` / `password`
 - Kecamatan: `kecamatan@airbersih.test` / `password`
 - Desa: `desa@airbersih.test` / `password`
 - Petugas: `petugas@airbersih.test` / `password`

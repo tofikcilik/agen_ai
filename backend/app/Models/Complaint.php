@@ -12,24 +12,17 @@ class Complaint extends Model
 
     protected $fillable = [
         'customer_id',
-        'village_id',
         'reported_by',
-        'reporter_name',
-        'reporter_phone',
         'category',
         'title',
         'description',
-        'disturbance_location',
-        'latitude',
-        'longitude',
+        'location_details',
         'status',
         'handled_by',
         'handled_at',
     ];
 
     protected $casts = [
-        'latitude' => 'decimal:7',
-        'longitude' => 'decimal:7',
         'handled_at' => 'datetime',
     ];
 
@@ -38,8 +31,13 @@ class Complaint extends Model
         return $this->belongsTo(Customer::class);
     }
 
-    public function village(): BelongsTo
+    public function reporter(): BelongsTo
     {
-        return $this->belongsTo(Village::class);
+        return $this->belongsTo(User::class, 'reported_by');
+    }
+
+    public function handler(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'handled_by');
     }
 }
