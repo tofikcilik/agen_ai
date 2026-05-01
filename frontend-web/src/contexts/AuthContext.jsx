@@ -1,35 +1,65 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { api } from '../lib/api';
 
 const AuthContext = createContext(null);
 
-const demoUsers = {
-  administrator: { name: 'Root Administrator', role: 'administrator' },
-  kecamatan: { name: 'Operator Kecamatan', role: 'kecamatan' },
-  desa: { name: 'Operator Desa', role: 'desa' },
-  petugas: { name: 'Petugas Lapangan', role: 'petugas_lapangan' },
-  petugas_lapangan: { name: 'Petugas Lapangan', role: 'petugas_lapangan' },
-};
-
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
+function loadSavedUser() {
+  try {
     const savedUser = window.localStorage.getItem('abm_user');
     return savedUser ? JSON.parse(savedUser) : null;
-  });
+  } catch {
+    return null;
+  }
+}
 
-  const value = {
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(loadSavedUser);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const token = window.localStorage.getItem('abm_token');
+    if (!token || user) return;
+
+    setLoading(true);
+    api.get('/auth/me')
+      .then((profile) => {
+        window.localStorage.setItem('abm_user', JSON.stringify(profile));
+        setUser(profile);
+      })
+      .catch(() => {
+        window.localStorage.removeItem('abm_user');
+        window.localStorage.removeItem('abm_token');
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
+  }, [user]);
+
+  const value = useMemo(() => ({
     user,
-    login: (role) => {
-      const selectedUser = demoUsers[role] ?? demoUsers.kecamatan;
-      window.localStorage.setItem('abm_user', JSON.stringify(selectedUser));
-      window.localStorage.setItem('abm_token', 'demo-token');
-      setUser(selectedUser);
+    loading,
+    login: async ({ email, password }) => {
+      const response = await api.post('/auth/login', {
+        email,
+        password,
+        device_name: 'frontend-web',
+      });
+
+      window.localStorage.setItem('abm_token', response.token);
+      window.localStorage.setItem('abm_user', JSON.stringify(response.user));
+      setUser(response.user);
+      return response.user;
     },
-    logout: () => {
+    logout: async () => {
+      try {
+        await api.post('/auth/logout', {});
+      } catch {
+        // Token lokal tetap dibersihkan walaupun request logout gagal.
+      }
       window.localStorage.removeItem('abm_user');
       window.localStorage.removeItem('abm_token');
       setUser(null);
     },
-  };
+  }), [user, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
