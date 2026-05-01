@@ -13,13 +13,13 @@ class BillSeeder extends Seeder
     {
         $bills = [
             [
-                'customer_number' => 'PLG-0001',
+                'customer_number' => 'DES001_000001',
                 'billing_month' => '2026-05-01',
                 'due_date' => '2026-05-25',
                 'status' => 'partial',
             ],
             [
-                'customer_number' => 'PLG-0002',
+                'customer_number' => 'DES001_000002',
                 'billing_month' => '2026-05-01',
                 'due_date' => '2026-05-25',
                 'status' => 'paid',
