@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Customer;
+use App\Models\Village;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 
 class CustomerController extends Controller
 {
@@ -19,19 +22,35 @@ class CustomerController extends Controller
 
     public function store(StoreCustomerRequest $request): JsonResponse
     {
-        $customer = Customer::create($request->validated());
+        $data = $request->validated();
+        $village = Village::findOrFail($data['village_id']);
 
-        return response()->json($customer, 201);
+        $customer = DB::transaction(function () use ($data, $village): Customer {
+            $nextSequence = ((int) Customer::where('village_id', $village->id)->lockForUpdate()->max('customer_sequence')) + 1;
+            $customerNumber = sprintf('%s_%06d', $village->code, $nextSequence);
+
+            return Customer::create([
+                ...Arr::except($data, ['customer_number', 'customer_sequence']),
+                'customer_sequence' => $nextSequence,
+                'customer_number' => $customerNumber,
+                'status' => $data['status'] ?? 'active',
+                'tariff_per_m3' => $data['tariff_per_m3'] ?? 3500,
+            ]);
+        });
+
+        return response()->json($customer->load('village.district'), 201);
     }
 
     public function show(Customer $customer): JsonResponse
     {
-        return response()->json($customer->load('village.district', 'meterReadings', 'bills'));
+        return response()->json($customer->load('village.district', 'meterReadings', 'bills', 'complaints'));
     }
 
     public function update(UpdateCustomerRequest $request, Customer $customer): JsonResponse
     {
-        $customer->update($request->validated());
+        $data = Arr::except($request->validated(), ['customer_number', 'customer_sequence']);
+
+        $customer->update($data);
 
         return response()->json($customer->fresh('village.district'));
     }
