@@ -14,12 +14,23 @@ class Customer extends Model
     protected $fillable = [
         'village_id',
         'customer_number',
+        'customer_sequence',
         'name',
-        'address',
         'phone',
+        'rt',
+        'rw',
+        'address',
+        'latitude',
+        'longitude',
         'meter_number',
         'status',
         'tariff_per_m3',
+    ];
+
+    protected $casts = [
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
+        'tariff_per_m3' => 'decimal:2',
     ];
 
     public function village(): BelongsTo
@@ -35,5 +46,10 @@ class Customer extends Model
     public function bills(): HasMany
     {
         return $this->hasMany(Bill::class);
+    }
+
+    public function complaints(): HasMany
+    {
+        return $this->hasMany(Complaint::class);
     }
 }
