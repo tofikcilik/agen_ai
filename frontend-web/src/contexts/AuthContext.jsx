@@ -3,9 +3,11 @@ import { createContext, useContext, useState } from 'react';
 const AuthContext = createContext(null);
 
 const demoUsers = {
+  administrator: { name: 'Root Administrator', role: 'administrator' },
   kecamatan: { name: 'Operator Kecamatan', role: 'kecamatan' },
   desa: { name: 'Operator Desa', role: 'desa' },
   petugas: { name: 'Petugas Lapangan', role: 'petugas_lapangan' },
+  petugas_lapangan: { name: 'Petugas Lapangan', role: 'petugas_lapangan' },
 };
 
 export function AuthProvider({ children }) {
