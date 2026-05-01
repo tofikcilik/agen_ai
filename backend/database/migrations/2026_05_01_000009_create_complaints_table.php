@@ -10,16 +10,24 @@ return new class extends Migration
     {
         Schema::create('complaints', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('customer_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('customer_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('village_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('reported_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('reporter_name');
+            $table->string('reporter_phone', 30)->nullable();
             $table->string('category')->default('lainnya');
             $table->string('title');
             $table->text('description');
-            $table->text('location_details');
+            $table->text('disturbance_location');
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
             $table->enum('status', ['baru', 'diproses', 'selesai'])->default('baru');
             $table->foreignId('handled_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('handled_at')->nullable();
             $table->timestamps();
+
+            $table->index(['village_id', 'status']);
+            $table->index(['customer_id', 'status']);
         });
     }
 
