@@ -21,10 +21,20 @@ wait_for_mysql() {
   done
 }
 
+remove_laravel_default_migrations() {
+  echo "Menghapus migration default Laravel yang bentrok dengan domain Air Bersih..."
+
+  rm -f "${RUNTIME_DIR}/database/migrations/0001_01_01_000000_create_users_table.php"
+  rm -f "${RUNTIME_DIR}/database/migrations/0001_01_01_000001_create_cache_table.php"
+  rm -f "${RUNTIME_DIR}/database/migrations/0001_01_01_000002_create_jobs_table.php"
+}
+
 copy_domain_source() {
   echo "Menyalin source Air Bersih ke runtime Laravel..."
 
   mkdir -p "${RUNTIME_DIR}/app" "${RUNTIME_DIR}/database/migrations" "${RUNTIME_DIR}/database/seeders" "${RUNTIME_DIR}/routes" "${RUNTIME_DIR}/bootstrap"
+
+  remove_laravel_default_migrations
 
   cp -R "${DOMAIN_DIR}/app/Http" "${RUNTIME_DIR}/app/"
   cp -R "${DOMAIN_DIR}/app/Models" "${RUNTIME_DIR}/app/"
