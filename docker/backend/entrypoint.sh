@@ -44,7 +44,6 @@ copy_domain_source() {
   cp "${DOMAIN_DIR}/routes/api.php" "${RUNTIME_DIR}/routes/api.php"
   cp "${DOMAIN_DIR}/bootstrap/app.php" "${RUNTIME_DIR}/bootstrap/app.php"
 
-  remove_framework_migrations
 }
 
 ensure_laravel_runtime() {
