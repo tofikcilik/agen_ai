@@ -3,66 +3,66 @@ services:
     image: mysql:8.4
     container_name: airbersih-mysql
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-air_bersih_management}
+      MYSQL_USER: ${MYSQL_USER:-airbersih}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-airbersih123}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-airbersihroot123}
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
       - airbersih_internal
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD:-airbersihroot123}"]
       interval: 10s
       timeout: 5s
       retries: 10
 
   backend:
     build:
-      context: ./repo/agen_ai
+      context: ../..
       dockerfile: docker/backend/Dockerfile
     container_name: airbersih-backend
     restart: unless-stopped
     depends_on:
       mysql:
         condition: service_healthy
-    env_file:
-      - .env
     environment:
-      APP_NAME: ${APP_NAME}
-      APP_ENV: ${APP_ENV}
-      APP_DEBUG: ${APP_DEBUG}
-      APP_URL: ${APP_URL}
+      APP_NAME: ${APP_NAME:-Air Bersih Management}
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_URL: ${APP_URL:-https://api.pelayanan.id}
       DB_CONNECTION: mysql
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_DATABASE: ${MYSQL_DATABASE}
-      DB_USERNAME: ${MYSQL_USER}
-      DB_PASSWORD: ${MYSQL_PASSWORD}
-      SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS}
-      SESSION_DOMAIN: ${SESSION_DOMAIN}
+      DB_DATABASE: ${MYSQL_DATABASE:-air_bersih_management}
+      DB_USERNAME: ${MYSQL_USER:-airbersih}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-airbersih123}
+      SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS:-app.pelayanan.id,api.pelayanan.id,localhost,127.0.0.1}
+      SESSION_DOMAIN: ${SESSION_DOMAIN:-.pelayanan.id}
+    ports:
+      - "18000:8000"
     expose:
       - "8000"
     volumes:
-      - ./repo/agen_ai/backend:/opt/domain-backend:ro
-      - ./backend:/var/www/html
+      - ../../backend:/opt/domain-backend:ro
+      - /opt/workspace/airbersih/backend:/var/www/html
     networks:
       - airbersih_internal
       - proxy
 
   frontend:
     build:
-      context: ./repo/agen_ai
+      context: ../..
       dockerfile: frontend-web/Dockerfile.production
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://api.pelayanan.id/api}
     container_name: airbersih-frontend
     restart: unless-stopped
     depends_on:
       - backend
+    ports:
+      - "18080:80"
     expose:
       - "80"
     networks:
