@@ -1,23 +1,39 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getValidationMessage } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
-const roles = [
-  { value: 'administrator', label: 'Root Administrator', note: 'Kontrol penuh semua wilayah dan modul.' },
-  { value: 'kecamatan', label: 'Admin Kecamatan', note: 'Pantau desa, pelanggan, tagihan, pembayaran, dan keluhan.' },
-  { value: 'desa', label: 'Admin Desa', note: 'Kelola operasional pelayanan desa.' },
-  { value: 'petugas', label: 'Petugas Lapangan', note: 'Catat meter dan pembayaran lapangan.' },
+const demoAccounts = [
+  { label: 'Root', email: 'admin@airbersih.test' },
+  { label: 'Kecamatan', email: 'kecamatan@airbersih.test' },
+  { label: 'Desa', email: 'desa@airbersih.test' },
+  { label: 'Petugas', email: 'petugas@airbersih.test' },
 ];
 
 export default function LoginPage() {
-  const [role, setRole] = useState('administrator');
+  const [form, setForm] = useState({ email: 'admin@airbersih.test', password: 'password' });
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  function handleSubmit(event) {
+  function updateField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function handleSubmit(event) {
     event.preventDefault();
-    login(role);
-    navigate('/');
+    setError('');
+    setSubmitting(true);
+
+    try {
+      await login(form);
+      navigate('/');
+    } catch (err) {
+      setError(getValidationMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -31,24 +47,36 @@ export default function LoginPage() {
 
       <form className="login-modern-card" onSubmit={handleSubmit}>
         <p className="eyebrow">Masuk aplikasi</p>
-        <h2>Pilih role kerja</h2>
-        <p className="muted">Mode demo untuk meninjau alur fitur sebelum integrasi akun final.</p>
+        <h2>Login operator</h2>
+        <p className="muted">Gunakan akun demo dari seeder untuk masuk ke API Laravel Sanctum.</p>
+
+        <label>
+          Email
+          <input value={form.email} onChange={(event) => updateField('email', event.target.value)} type="email" />
+        </label>
+        <label>
+          Password
+          <input value={form.password} onChange={(event) => updateField('password', event.target.value)} type="password" />
+        </label>
 
         <div className="role-option-grid">
-          {roles.map((item) => (
+          {demoAccounts.map((account) => (
             <button
-              className={`role-option ${role === item.value ? 'active' : ''}`}
-              key={item.value}
+              className={`role-option ${form.email === account.email ? 'active' : ''}`}
+              key={account.email}
               type="button"
-              onClick={() => setRole(item.value)}
+              onClick={() => setForm({ email: account.email, password: 'password' })}
             >
-              <strong>{item.label}</strong>
-              <small>{item.note}</small>
+              <strong>{account.label}</strong>
+              <small>{account.email}</small>
             </button>
           ))}
         </div>
 
-        <button className="primary-button login-submit" type="submit">Masuk ke Dashboard</button>
+        {error ? <div className="alert danger">{error}</div> : null}
+        <button className="primary-button login-submit" disabled={submitting} type="submit">
+          {submitting ? 'Masuk...' : 'Masuk ke Dashboard'}
+        </button>
       </form>
     </div>
   );
