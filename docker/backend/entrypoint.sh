@@ -16,31 +16,52 @@ wait_for_mysql() {
     --protocol=TCP \
     --ssl=0 \
     --silent; do
+    echo "MySQL belum siap, mencoba lagi..."
     sleep 3
   done
+
+  echo "MySQL siap."
 }
 
-prepare_laravel_runtime() {
-  if [ ! -f "${RUNTIME_DIR}/artisan" ]; then
-    echo "Inisialisasi Laravel baru di ${RUNTIME_DIR}..."
-    rm -rf "${RUNTIME_DIR:?}/"*
-    composer create-project laravel/laravel "${RUNTIME_DIR}"
-  fi
-
-  cd "${RUNTIME_DIR}"
-
-  composer require laravel/sanctum
-
+remove_laravel_default_migrations() {
   rm -f "${RUNTIME_DIR}/database/migrations/0001_01_01_000000_create_users_table.php"
   rm -f "${RUNTIME_DIR}/database/migrations/0001_01_01_000001_create_cache_table.php"
   rm -f "${RUNTIME_DIR}/database/migrations/0001_01_01_000002_create_jobs_table.php"
+}
 
+copy_domain_source() {
+  echo "Menyalin source Air Bersih ke runtime Laravel..."
+
+  mkdir -p "${RUNTIME_DIR}/app" "${RUNTIME_DIR}/database/migrations" "${RUNTIME_DIR}/database/seeders" "${RUNTIME_DIR}/routes" "${RUNTIME_DIR}/bootstrap"
+  remove_laravel_default_migrations
+
+  rm -rf "${RUNTIME_DIR}/app/Http" "${RUNTIME_DIR}/app/Models"
   cp -R "${DOMAIN_DIR}/app/Http" "${RUNTIME_DIR}/app/"
   cp -R "${DOMAIN_DIR}/app/Models" "${RUNTIME_DIR}/app/"
   cp -R "${DOMAIN_DIR}/database/migrations/." "${RUNTIME_DIR}/database/migrations/"
   cp -R "${DOMAIN_DIR}/database/seeders/." "${RUNTIME_DIR}/database/seeders/"
   cp "${DOMAIN_DIR}/routes/api.php" "${RUNTIME_DIR}/routes/api.php"
   cp "${DOMAIN_DIR}/bootstrap/app.php" "${RUNTIME_DIR}/bootstrap/app.php"
+}
+
+ensure_laravel_runtime() {
+  if [ ! -f "${RUNTIME_DIR}/artisan" ]; then
+    echo "Inisialisasi Laravel baru di ${RUNTIME_DIR}..."
+    find "${RUNTIME_DIR}" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+    composer create-project laravel/laravel "${RUNTIME_DIR}"
+  fi
+
+  cd "${RUNTIME_DIR}"
+
+  if ! composer show laravel/sanctum >/dev/null 2>&1; then
+    echo "Menginstal Laravel Sanctum..."
+    composer require laravel/sanctum --no-scripts
+  else
+    echo "Laravel Sanctum sudah terinstal."
+  fi
+
+  composer dump-autoload --no-scripts
+  copy_domain_source
 
   if [ ! -f "${RUNTIME_DIR}/.env" ]; then
     cp "${RUNTIME_DIR}/.env.example" "${RUNTIME_DIR}/.env"
@@ -48,8 +69,8 @@ prepare_laravel_runtime() {
 
   php artisan vendor:publish --provider="Laravel\\Sanctum\\SanctumServiceProvider" --force || true
   php artisan key:generate --force
-  php artisan config:clear
-  php artisan route:clear
+  php artisan config:clear || true
+  php artisan route:clear || true
 
   touch "${BOOTSTRAP_FLAG}"
 }
@@ -75,7 +96,8 @@ sync_env() {
     ];
     $contents = file_exists($envFile) ? file_get_contents($envFile) : "";
     foreach ($pairs as $key => $value) {
-      $safeValue = str_contains($value, " ") ? "\"" . addcslashes($value, "\"") . "\"" : $value;
+      $needsQuote = preg_match("/\s/", $value) || str_contains($value, "#") || str_contains($value, "=");
+      $safeValue = $needsQuote ? "\"" . addcslashes($value, "\\\"") . "\"" : $value;
       $line = $key . "=" . $safeValue;
       if (preg_match("/^" . preg_quote($key, "/") . "=.*$/m", $contents)) {
         $contents = preg_replace("/^" . preg_quote($key, "/") . "=.*$/m", $line, $contents);
@@ -89,7 +111,13 @@ sync_env() {
 
 run_migrations() {
   cd "${RUNTIME_DIR}"
-  php artisan migrate --seed --force
+
+  if [ "${AIRBERSIH_MIGRATE_FRESH:-false}" = "true" ]; then
+    echo "Menjalankan migrate:fresh untuk reset database preview..."
+    php artisan migrate:fresh --seed --force
+  else
+    php artisan migrate --seed --force
+  fi
 }
 
 start_server() {
@@ -98,11 +126,7 @@ start_server() {
 }
 
 wait_for_mysql
-
-if [ ! -f "${BOOTSTRAP_FLAG}" ]; then
-  prepare_laravel_runtime
-fi
-
+ensure_laravel_runtime
 sync_env
 run_migrations
 start_server
