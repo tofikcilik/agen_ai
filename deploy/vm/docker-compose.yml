@@ -10,6 +10,7 @@
 # Catatan:
 # - Jangan menaruh source code langsung di /opt/workspace/airbersih/backend.
 # - Folder /opt/workspace/airbersih/backend adalah hasil runtime container dan aman dihapus saat reset preview.
+# - Preview VM memakai AIRBERSIH_MIGRATE_FRESH=true secara default agar perubahan migration tidak bentrok dengan tabel lama.
 
 services:
   mysql:
@@ -53,6 +54,7 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD:-airbersih123}
       SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS:-app.pelayanan.id,api.pelayanan.id,localhost,127.0.0.1}
       SESSION_DOMAIN: ${SESSION_DOMAIN:-.pelayanan.id}
+      AIRBERSIH_MIGRATE_FRESH: ${AIRBERSIH_MIGRATE_FRESH:-true}
     ports:
       - "18000:8000"
     expose:
