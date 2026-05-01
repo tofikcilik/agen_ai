@@ -2,6 +2,8 @@
 
 Dokumen ini menyiapkan cara paling praktis untuk menjalankan repo ini di Docker pada VM Compute Engine.
 
+Jika Anda memakai Nginx Proxy Manager dan domain terpisah `app.` serta `api.`, gunakan panduan yang lebih spesifik di `docs/vm-deploy-step-by-step.md`.
+
 ## Arsitektur Runtime
 
 - `mysql`: database MySQL 8

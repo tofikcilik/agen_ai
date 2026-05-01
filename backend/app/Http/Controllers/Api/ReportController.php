@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\ScopesDataByRole;
 use App\Http\Controllers\Controller;
 use App\Models\Bill;
 use App\Models\MeterReading;
@@ -11,9 +12,13 @@ use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
+    use ScopesDataByRole;
+
     public function financialSummary(): JsonResponse
     {
-        $data = Payment::query()
+        $user = request()->user()->loadMissing('role');
+
+        $data = $this->scopePayments(Payment::query(), $user)
             ->join('bills', 'payments.bill_id', '=', 'bills.id')
             ->join('customers', 'bills.customer_id', '=', 'customers.id')
             ->join('villages', 'customers.village_id', '=', 'villages.id')
@@ -27,7 +32,9 @@ class ReportController extends Controller
 
     public function arrears(): JsonResponse
     {
-        $data = Bill::with('customer.village')
+        $user = request()->user()->loadMissing('role');
+
+        $data = $this->scopeBills(Bill::query()->with('customer.village'), $user)
             ->whereIn('status', ['unpaid', 'partial'])
             ->orderBy('due_date')
             ->get();
@@ -37,7 +44,9 @@ class ReportController extends Controller
 
     public function usage(): JsonResponse
     {
-        $data = MeterReading::query()
+        $user = request()->user()->loadMissing('role');
+
+        $data = $this->scopeMeterReadings(MeterReading::query(), $user)
             ->join('customers', 'meter_readings.customer_id', '=', 'customers.id')
             ->join('villages', 'customers.village_id', '=', 'villages.id')
             ->selectRaw('DATE_FORMAT(reading_month, "%Y-%m") as month, villages.name as village_name, SUM(usage_m3) as total_usage')

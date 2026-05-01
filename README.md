@@ -34,3 +34,12 @@ docker compose up -d --build
 ```
 
 Panduan lengkapnya ada di [docs/docker-gcp-vm.md](/workspace/agen_ai/docs/docker-gcp-vm.md).
+
+## Deploy VM
+
+Untuk setup yang cocok dengan Nginx Proxy Manager, Portainer, dan domain:
+
+- `app.pelayanan.id`
+- `api.pelayanan.id`
+
+lihat [docs/vm-deploy-step-by-step.md](/workspace/agen_ai/docs/vm-deploy-step-by-step.md).

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\ScopesDataByRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GenerateBillRequest;
 use App\Models\Bill;
@@ -10,26 +11,41 @@ use Illuminate\Http\JsonResponse;
 
 class BillController extends Controller
 {
+    use ScopesDataByRole;
+
     public function index(): JsonResponse
     {
+        $user = request()->user()->loadMissing('role');
+
         return response()->json(
-            Bill::with('customer.village', 'payments')->latest('billing_month')->paginate(20)
+            $this->scopeBills(
+                Bill::query()->with('customer.village', 'payments')->latest('billing_month'),
+                $user
+            )->paginate($this->perPage())
         );
     }
 
     public function show(Bill $bill): JsonResponse
     {
+        $this->ensureBillAccess(request()->user()->loadMissing('role'), $bill->loadMissing('customer'));
+
         return response()->json($bill->load('customer.village.district', 'meterReading', 'payments'));
     }
 
     public function generate(GenerateBillRequest $request): JsonResponse
     {
+        $user = $request->user()->loadMissing('role');
         $month = $request->string('reading_month')->toString() . '-01';
         $dueDate = $request->date('due_date');
 
         $generated = [];
 
-        MeterReading::with('customer')
+        $readingsQuery = $this->scopeMeterReadings(
+            MeterReading::query()->with('customer'),
+            $user
+        );
+
+        $readingsQuery
             ->where('reading_month', $month)
             ->chunk(100, function ($readings) use (&$generated, $dueDate, $month): void {
                 foreach ($readings as $reading) {

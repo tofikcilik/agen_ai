@@ -1,192 +1,193 @@
-# Deploy Preview Air Bersih Management di VM GCP
+# Panduan Tahap Demi Tahap di VM
 
-Panduan ini mengikuti kondisi VM saat ini:
+Panduan ini khusus untuk lingkungan Anda:
 
-- Nginx Proxy Manager ada di `panel.pelayanan.id`
-- Portainer ada di `portainer.pelayanan.id`
-- Frontend preview memakai `app.pelayanan.id`
-- Backend API preview memakai `api.pelayanan.id`
-- Folder kerja utama: `/opt/workspace/airbersih`
-- Source GitHub ditaruh di: `/opt/workspace/airbersih/repo/agen_ai`
-- Runtime Laravel ditaruh di: `/opt/workspace/airbersih/backend`
+- Ubuntu sudah terpasang
+- Docker sudah terpasang
+- Nginx Proxy Manager sudah ada di `panel.pelayanan.id`
+- Portainer sudah ada di `portainer.pelayanan.id`
+- Domain aplikasi:
+  - Frontend: `app.pelayanan.id`
+  - Backend API: `api.pelayanan.id`
 
-## 1. Buat folder kerja
+## 1. Siapkan Struktur Folder
+
+Login ke VM lalu jalankan:
 
 ```bash
 sudo mkdir -p /opt/workspace/airbersih/{repo,backend,frontend}
 sudo chown -R $USER:$USER /opt/workspace/airbersih
 ```
 
-## 2. Clone repo GitHub
+Struktur yang dipakai:
+
+- `/opt/workspace/airbersih/repo/agen_ai` untuk source Git
+- `/opt/workspace/airbersih/backend` untuk runtime Laravel
+- `/opt/workspace/airbersih/frontend` disiapkan sebagai folder kerja frontend bila nanti dibutuhkan
+
+## 2. Clone Repo GitHub
 
 ```bash
 cd /opt/workspace/airbersih/repo
 git clone https://github.com/tofikcilik/agen_ai.git
 ```
 
-Jika repo sudah ada di VM, cukup update:
+## 3. Salin File Deploy ke Root Workspace
 
 ```bash
-cd /opt/workspace/airbersih/repo/agen_ai
-git pull --ff-only
+cd /opt/workspace/airbersih
+cp repo/agen_ai/deploy/vm/docker-compose.yml .
+cp repo/agen_ai/deploy/vm/.env.example .env
+cp repo/agen_ai/deploy/vm/deploy.sh .
+chmod +x deploy.sh
 ```
 
-## 3. Jalankan stack Docker dari file khusus VM
+## 4. Isi File Environment
 
-File compose khusus VM ada di:
-
-```text
-deploy/vm/docker-compose.yml
-```
-
-Jalankan:
+Edit file:
 
 ```bash
-cd /opt/workspace/airbersih/repo/agen_ai
-docker compose -f deploy/vm/docker-compose.yml up -d --build
+nano /opt/workspace/airbersih/.env
 ```
+
+Nilai yang perlu Anda pastikan:
+
+- `MYSQL_PASSWORD`
+- `MYSQL_ROOT_PASSWORD`
+- `APP_URL=https://api.pelayanan.id`
+- `SESSION_DOMAIN=.pelayanan.id`
+- `SANCTUM_STATEFUL_DOMAINS=app.pelayanan.id`
+- `VITE_API_BASE_URL=https://api.pelayanan.id/api`
+
+## 5. Jalankan Stack Pertama Kali
+
+```bash
+cd /opt/workspace/airbersih
+docker compose up -d --build
+```
+
+Saat pertama kali jalan:
+
+- MySQL akan dibuat
+- Laravel runtime akan dibuat di `/opt/workspace/airbersih/backend`
+- migration dan seed demo akan dijalankan
+- frontend React akan dibuild production
+
+## 6. Pastikan Network Proxy Tersedia
+
+Stack deploy VM sekarang sudah dirancang untuk join ke network Docker eksternal bernama `proxy`, supaya Nginx Proxy Manager bisa langsung meneruskan trafik ke nama container tanpa publish port tambahan.
+
+Pastikan network `proxy` sudah ada:
+
+```bash
+docker network ls
+docker network create proxy
+```
+
+Jika network `proxy` sudah ada, perintah create akan gagal dengan aman dan bisa diabaikan.
+
+## 7. Jalankan Ulang Stack
+
+```bash
+cd /opt/workspace/airbersih
+docker compose up -d --build
+```
+
+Kalau ingin memastikan network sudah menempel:
+
+```bash
+docker compose ps
+docker network inspect proxy
+```
+
+## 8. Buat Proxy Host di Nginx Proxy Manager
+
+Di NPM buat dua Proxy Host:
+
+- `app.pelayanan.id` -> `http://airbersih-frontend:80`
+- `api.pelayanan.id` -> `http://airbersih-backend:8000`
+
+Pengaturan ringkas:
+
+- Scheme: `http`
+- Forward Hostname/IP: nama container tujuan di network `proxy`
+- SSL: aktifkan Let’s Encrypt untuk masing-masing domain
+
+## 9. Preview Setelah Ada Perubahan di GitHub
+
+Setiap kali ada perubahan kode baru:
+
+```bash
+cd /opt/workspace/airbersih
+./deploy.sh
+```
+
+Script ini akan:
+
+- masuk ke repo git
+- `git pull`
+- build ulang image
+- restart container
+
+## 10. Opsi Auto Deploy dari GitHub
+
+Repo sudah saya siapkan dengan workflow:
+
+- `.github/workflows/deploy-vm.yml`
+
+Agar aktif, isi GitHub Secrets berikut:
+
+- `VM_HOST`
+- `VM_USERNAME`
+- `VM_SSH_KEY`
+
+Lalu setiap push ke `main`, GitHub Actions akan SSH ke VM dan menjalankan:
+
+```bash
+cd /opt/workspace/airbersih
+./deploy.sh
+```
+
+Jika SSH VM Anda tidak memakai port `22`, ubah file workflow `.github/workflows/deploy-vm.yml` lalu tambahkan parameter `port`.
+
+## 11. Verifikasi
 
 Cek container:
 
 ```bash
-docker compose -f deploy/vm/docker-compose.yml ps
+cd /opt/workspace/airbersih
+docker compose ps
 ```
 
 Cek log:
 
 ```bash
-docker compose -f deploy/vm/docker-compose.yml logs -f
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f mysql
 ```
 
-## 4. Port yang dipakai
-
-Stack VM mem-publish port berikut ke host:
-
-| Service | Host Port | Container Port | Domain |
-|---|---:|---:|---|
-| Frontend | `18080` | `80` | `app.pelayanan.id` |
-| Backend API | `18000` | `8000` | `api.pelayanan.id` |
-
-Database MySQL tidak dipublish ke internet. Database hanya dipakai internal container.
-
-## 5. Setting Nginx Proxy Manager
-
-Buka NPM di:
-
-```text
-https://panel.pelayanan.id
-```
-
-Buat Proxy Host untuk frontend:
-
-- Domain Names: `app.pelayanan.id`
-- Scheme: `http`
-- Forward Hostname/IP: IP VM atau nama host Docker yang dapat dijangkau NPM
-- Forward Port: `18080`
-- Aktifkan Websockets Support jika tersedia
-- SSL: Request New SSL Certificate, aktifkan Force SSL
-
-Buat Proxy Host untuk backend:
-
-- Domain Names: `api.pelayanan.id`
-- Scheme: `http`
-- Forward Hostname/IP: IP VM atau nama host Docker yang dapat dijangkau NPM
-- Forward Port: `18000`
-- Aktifkan Websockets Support jika tersedia
-- SSL: Request New SSL Certificate, aktifkan Force SSL
-
-## 6. Test akses
-
-Frontend:
-
-```text
-https://app.pelayanan.id
-```
-
-Backend API:
-
-```text
-https://api.pelayanan.id/api
-```
-
-Health check sederhana:
+Test API langsung dari host:
 
 ```bash
-curl -I https://app.pelayanan.id
-curl -I https://api.pelayanan.id/api
+docker exec -it nginx-proxy-manager curl http://airbersih-backend:8000/api/auth/me
 ```
 
-## 7. Update ketika ada perubahan dari GitHub
-
-Setiap ada perubahan source code di GitHub, jalankan:
+Test frontend dari network yang sama:
 
 ```bash
-cd /opt/workspace/airbersih/repo/agen_ai
-git pull --ff-only
-docker compose -f deploy/vm/docker-compose.yml up -d --build
+docker exec -it nginx-proxy-manager curl -I http://airbersih-frontend:80
 ```
 
-Untuk melihat hasilnya:
+## 12. Rekomendasi Praktis
 
-```bash
-docker compose -f deploy/vm/docker-compose.yml ps
-docker compose -f deploy/vm/docker-compose.yml logs -f
-```
+Untuk VM Anda, pola paling enak adalah:
 
-## 8. Catatan struktur folder
+- Git source di `/opt/workspace/airbersih/repo/agen_ai`
+- Deploy file di `/opt/workspace/airbersih`
+- Backend runtime di `/opt/workspace/airbersih/backend`
+- Stack join ke network Docker eksternal `proxy`
+- NPM meneruskan `app.pelayanan.id` ke `airbersih-frontend:80`
+- NPM meneruskan `api.pelayanan.id` ke `airbersih-backend:8000`
 
-Struktur yang disarankan:
-
-```text
-/opt/workspace/airbersih/
-├── backend/              # runtime Laravel container
-├── frontend/             # folder cadangan frontend/deploy
-└── repo/
-    └── agen_ai/          # source GitHub
-        ├── backend/
-        ├── frontend-web/
-        ├── mobile-field/
-        ├── docker/
-        ├── deploy/vm/
-        └── docs/
-```
-
-Jangan clone repo langsung ke `/opt/workspace/airbersih/backend`, karena folder itu dipakai sebagai runtime Laravel oleh container.
-
-## 9. Troubleshooting cepat
-
-Jika frontend tidak terbuka:
-
-```bash
-docker logs airbersih-frontend
-```
-
-Jika API tidak terbuka:
-
-```bash
-docker logs airbersih-backend
-```
-
-Jika database belum siap:
-
-```bash
-docker logs airbersih-mysql
-```
-
-Jika ingin rebuild bersih:
-
-```bash
-cd /opt/workspace/airbersih/repo/agen_ai
-docker compose -f deploy/vm/docker-compose.yml down
-docker compose -f deploy/vm/docker-compose.yml up -d --build
-```
-
-Jika ingin reset database preview:
-
-```bash
-cd /opt/workspace/airbersih/repo/agen_ai
-docker compose -f deploy/vm/docker-compose.yml down -v
-docker compose -f deploy/vm/docker-compose.yml up -d --build
-```
-
-Perintah reset database akan menghapus data MySQL preview.
+Pola ini paling mudah dirawat saat ada update dari GitHub dan paling cocok dengan Portainer maupun NPM.

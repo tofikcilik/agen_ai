@@ -12,6 +12,14 @@ Base path: `/api`
 
 - `GET /dashboard`
 
+## Reference Data
+
+- `GET /districts`
+- `GET /villages`
+- `POST /villages`
+- `PUT /villages/{id}`
+- `DELETE /villages/{id}`
+
 ## Customers
 
 - `GET /customers`
@@ -85,6 +93,12 @@ Request body:
 
 ## Hak Akses
 
-- `kecamatan`: dashboard, laporan, monitoring seluruh data
-- `desa`: pelanggan, meter, tagihan, pembayaran, keluhan, laporan desa
-- `petugas_lapangan`: input meter, pembayaran, update lapangan
+- `administrator`: kontrol penuh lintas kecamatan dan desa
+- `kecamatan`: CRUD desa di bawah kecamatannya, pelanggan, tagihan, dan laporan
+- `desa`: pelanggan, meter, tagihan, pembayaran, keluhan, laporan desa sendiri
+- `petugas_lapangan`: input meter, pembayaran, dan update keluhan untuk wilayah desa sendiri
+
+## Catatan Query
+
+- Daftar `customers`, `meter-readings`, `bills`, `payments`, dan `complaints` menerima `?per_page=` untuk mengatur jumlah data per halaman.
+- Semua endpoint daftar di-scope otomatis sesuai role pengguna yang sedang login.
