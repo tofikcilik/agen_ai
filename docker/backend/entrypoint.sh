@@ -23,17 +23,18 @@ wait_for_mysql() {
   echo "MySQL siap."
 }
 
-remove_laravel_default_migrations() {
+remove_framework_migrations() {
   rm -f "${RUNTIME_DIR}/database/migrations/0001_01_01_000000_create_users_table.php"
   rm -f "${RUNTIME_DIR}/database/migrations/0001_01_01_000001_create_cache_table.php"
   rm -f "${RUNTIME_DIR}/database/migrations/0001_01_01_000002_create_jobs_table.php"
+  rm -f "${RUNTIME_DIR}"/database/migrations/*create_personal_access_tokens_table.php 2>/dev/null || true
 }
 
 copy_domain_source() {
   echo "Menyalin source Air Bersih ke runtime Laravel..."
 
   mkdir -p "${RUNTIME_DIR}/app" "${RUNTIME_DIR}/database/migrations" "${RUNTIME_DIR}/database/seeders" "${RUNTIME_DIR}/routes" "${RUNTIME_DIR}/bootstrap"
-  remove_laravel_default_migrations
+  remove_framework_migrations
 
   rm -rf "${RUNTIME_DIR}/app/Http" "${RUNTIME_DIR}/app/Models"
   cp -R "${DOMAIN_DIR}/app/Http" "${RUNTIME_DIR}/app/"
@@ -42,13 +43,15 @@ copy_domain_source() {
   cp -R "${DOMAIN_DIR}/database/seeders/." "${RUNTIME_DIR}/database/seeders/"
   cp "${DOMAIN_DIR}/routes/api.php" "${RUNTIME_DIR}/routes/api.php"
   cp "${DOMAIN_DIR}/bootstrap/app.php" "${RUNTIME_DIR}/bootstrap/app.php"
+
+  remove_framework_migrations
 }
 
 ensure_laravel_runtime() {
   if [ ! -f "${RUNTIME_DIR}/artisan" ]; then
     echo "Inisialisasi Laravel baru di ${RUNTIME_DIR}..."
     find "${RUNTIME_DIR}" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
-    composer create-project laravel/laravel "${RUNTIME_DIR}"
+    composer create-project laravel/laravel "${RUNTIME_DIR}" --no-scripts
   fi
 
   cd "${RUNTIME_DIR}"
@@ -67,7 +70,6 @@ ensure_laravel_runtime() {
     cp "${RUNTIME_DIR}/.env.example" "${RUNTIME_DIR}/.env"
   fi
 
-  php artisan vendor:publish --provider="Laravel\\Sanctum\\SanctumServiceProvider" --force || true
   php artisan key:generate --force
   php artisan config:clear || true
   php artisan route:clear || true
