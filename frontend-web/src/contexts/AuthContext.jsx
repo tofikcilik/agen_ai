@@ -3,10 +3,30 @@ import { api } from '../lib/api';
 
 const AuthContext = createContext(null);
 
+function normalizeUser(user) {
+  if (!user) return null;
+
+  const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
+
+  return {
+    ...user,
+    roleName,
+    roleLabel: roleName?.replaceAll('_', ' ') || 'operator',
+  };
+}
+
+function saveUser(user) {
+  const normalized = normalizeUser(user);
+  if (normalized) {
+    window.localStorage.setItem('abm_user', JSON.stringify(normalized));
+  }
+  return normalized;
+}
+
 function loadSavedUser() {
   try {
     const savedUser = window.localStorage.getItem('abm_user');
-    return savedUser ? JSON.parse(savedUser) : null;
+    return savedUser ? normalizeUser(JSON.parse(savedUser)) : null;
   } catch {
     return null;
   }
@@ -23,8 +43,7 @@ export function AuthProvider({ children }) {
     setLoading(true);
     api.get('/auth/me')
       .then((profile) => {
-        window.localStorage.setItem('abm_user', JSON.stringify(profile));
-        setUser(profile);
+        setUser(saveUser(profile));
       })
       .catch(() => {
         window.localStorage.removeItem('abm_user');
@@ -45,9 +64,9 @@ export function AuthProvider({ children }) {
       });
 
       window.localStorage.setItem('abm_token', response.token);
-      window.localStorage.setItem('abm_user', JSON.stringify(response.user));
-      setUser(response.user);
-      return response.user;
+      const normalizedUser = saveUser(response.user);
+      setUser(normalizedUser);
+      return normalizedUser;
     },
     logout: async () => {
       try {
