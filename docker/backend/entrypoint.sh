@@ -38,12 +38,13 @@ install_sanctum_if_needed() {
   cd "${RUNTIME_DIR}"
 
   if ! composer show laravel/sanctum >/dev/null 2>&1; then
-    echo "Menginstal Laravel Sanctum..."
-    composer require laravel/sanctum
+    echo "Menginstal Laravel Sanctum tanpa composer scripts..."
+    composer require laravel/sanctum --no-scripts
   else
     echo "Laravel Sanctum sudah terinstal."
-    composer dump-autoload
   fi
+
+  composer dump-autoload --no-scripts
 }
 
 prepare_laravel_runtime() {
@@ -64,8 +65,8 @@ prepare_laravel_runtime() {
 
   php artisan vendor:publish --provider="Laravel\\Sanctum\\SanctumServiceProvider" --force || true
   php artisan key:generate --force
-  php artisan config:clear
-  php artisan route:clear
+  php artisan config:clear || true
+  php artisan route:clear || true
 
   touch "${BOOTSTRAP_FLAG}"
 }
@@ -89,9 +90,17 @@ sync_env() {
       "SANCTUM_STATEFUL_DOMAINS" => getenv("SANCTUM_STATEFUL_DOMAINS") ?: "localhost,127.0.0.1",
       "SESSION_DOMAIN" => getenv("SESSION_DOMAIN") ?: "localhost",
     ];
+
+    $quote = function (string $value): string {
+      $value = str_replace(["\\", "\""], ["\\\\", "\\\""], $value);
+      return "\"" . $value . "\"";
+    };
+
     $contents = file_exists($envFile) ? file_get_contents($envFile) : "";
     foreach ($pairs as $key => $value) {
-      $line = $key . "=" . $value;
+      $needsQuote = preg_match("/\s/", $value) || str_contains($value, "#") || str_contains($value, "=");
+      $encodedValue = $needsQuote ? $quote($value) : $value;
+      $line = $key . "=" . $encodedValue;
       if (preg_match("/^" . preg_quote($key, "/") . "=.*$/m", $contents)) {
         $contents = preg_replace("/^" . preg_quote($key, "/") . "=.*$/m", $line, $contents);
       } else {
