@@ -12,9 +12,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('village_id')->constrained()->cascadeOnDelete();
             $table->string('customer_number')->unique();
+            $table->unsignedInteger('customer_sequence');
             $table->string('name');
-            $table->string('phone')->nullable();
-            $table->string('address_rt_rw', 30)->nullable();
+            $table->string('phone', 30)->nullable();
+            $table->string('rt', 10)->nullable();
+            $table->string('rw', 10)->nullable();
             $table->text('address_detail')->nullable();
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
@@ -22,6 +24,9 @@ return new class extends Migration
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->decimal('tariff_per_m3', 12, 2)->default(3500);
             $table->timestamps();
+
+            $table->unique(['village_id', 'customer_sequence']);
+            $table->index(['village_id', 'status']);
         });
     }
 
