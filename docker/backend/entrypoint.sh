@@ -14,7 +14,7 @@ wait_for_mysql() {
     -u"${DB_USERNAME}" \
     -p"${DB_PASSWORD}" \
     --protocol=TCP \
-    --ssl-mode=DISABLED \
+    --ssl=0 \
     --silent; do
     sleep 3
   done
