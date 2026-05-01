@@ -13,28 +13,18 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
+            $table->string('phone', 30)->nullable();
+            $table->text('service_area')->nullable();
             $table->foreignId('role_id')->constrained('roles');
             $table->foreignId('district_id')->nullable()->constrained('districts')->nullOnDelete();
             $table->foreignId('village_id')->nullable()->constrained('villages')->nullOnDelete();
             $table->rememberToken();
             $table->timestamps();
         });
-
-        Schema::create('personal_access_tokens', function (Blueprint $table): void {
-            $table->id();
-            $table->morphs('tokenable');
-            $table->string('name');
-            $table->string('token', 64)->unique();
-            $table->text('abilities')->nullable();
-            $table->timestamp('last_used_at')->nullable();
-            $table->timestamp('expires_at')->nullable();
-            $table->timestamps();
-        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('personal_access_tokens');
         Schema::dropIfExists('users');
     }
 };
