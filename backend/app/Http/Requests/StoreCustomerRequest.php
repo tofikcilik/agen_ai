@@ -20,10 +20,10 @@ class StoreCustomerRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:30'],
             'rt' => ['nullable', 'string', 'max:10'],
             'rw' => ['nullable', 'string', 'max:10'],
-            'address' => ['required', 'string'],
+            'address_detail' => ['nullable', 'string'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            'meter_number' => ['required', 'string', 'max:50', Rule::unique('customers', 'meter_number')],
+            'meter_number' => ['nullable', 'string', 'max:50', Rule::unique('customers', 'meter_number')],
             'status' => ['nullable', 'in:active,inactive'],
             'tariff_per_m3' => ['nullable', 'numeric', 'min:0'],
         ];
