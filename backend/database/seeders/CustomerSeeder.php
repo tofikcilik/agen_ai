@@ -10,35 +10,44 @@ class CustomerSeeder extends Seeder
 {
     public function run(): void
     {
-        $village = Village::where('code', 'DES-001')->firstOrFail();
+        $village = Village::where('code', 'DES001')->firstOrFail();
 
         $customers = [
             [
-                'customer_number' => 'PLG-0001',
+                'customer_sequence' => 1,
                 'name' => 'Siti Aminah',
-                'address_rt_rw' => 'RT 01 / RW 01',
+                'rt' => '001',
+                'rw' => '001',
                 'address_detail' => 'Dusun 1, Desa Sumber Jaya',
                 'phone' => '081234567801',
+                'latitude' => -6.2146200,
+                'longitude' => 106.8451300,
                 'meter_number' => 'MTR-1001',
                 'status' => 'active',
                 'tariff_per_m3' => 3500,
             ],
             [
-                'customer_number' => 'PLG-0002',
+                'customer_sequence' => 2,
                 'name' => 'Rahmat Hidayat',
-                'address_rt_rw' => 'RT 02 / RW 01',
+                'rt' => '002',
+                'rw' => '001',
                 'address_detail' => 'Dusun 2, Desa Sumber Jaya',
                 'phone' => '081234567802',
+                'latitude' => -6.2151000,
+                'longitude' => 106.8462000,
                 'meter_number' => 'MTR-1002',
                 'status' => 'active',
                 'tariff_per_m3' => 3500,
             ],
             [
-                'customer_number' => 'PLG-0003',
+                'customer_sequence' => 3,
                 'name' => 'Dewi Lestari',
-                'address_rt_rw' => 'RT 03 / RW 01',
+                'rt' => '003',
+                'rw' => '001',
                 'address_detail' => 'Dusun 3, Desa Sumber Jaya',
                 'phone' => '081234567803',
+                'latitude' => -6.2178000,
+                'longitude' => 106.8429000,
                 'meter_number' => 'MTR-1003',
                 'status' => 'inactive',
                 'tariff_per_m3' => 3000,
@@ -46,9 +55,15 @@ class CustomerSeeder extends Seeder
         ];
 
         foreach ($customers as $customer) {
+            $customerNumber = sprintf('%s_%06d', $village->code, $customer['customer_sequence']);
+
             Customer::updateOrCreate(
-                ['customer_number' => $customer['customer_number']],
-                ['village_id' => $village->id, ...$customer]
+                ['customer_number' => $customerNumber],
+                [
+                    'village_id' => $village->id,
+                    'customer_number' => $customerNumber,
+                    ...$customer,
+                ]
             );
         }
     }
