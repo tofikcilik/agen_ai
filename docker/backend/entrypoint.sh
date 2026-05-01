@@ -123,7 +123,8 @@ sync_env() {
 
 run_migrations() {
   cd "${RUNTIME_DIR}"
-  php artisan migrate --seed --force
+  echo "Menjalankan migrate:fresh untuk database preview Air Bersih..."
+  php artisan migrate:fresh --seed --force
 }
 
 start_server() {
