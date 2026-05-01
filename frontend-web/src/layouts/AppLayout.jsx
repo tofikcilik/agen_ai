@@ -18,6 +18,7 @@ const menu = [
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
+  const roleName = user?.roleName || (typeof user?.role === 'string' ? user.role : user?.role?.name);
 
   return (
     <div className="shell modern-shell">
@@ -33,11 +34,11 @@ export default function AppLayout() {
           <div className="operator-card">
             <p className="muted">Login sebagai</p>
             <strong>{user?.name}</strong>
-            <span className="role-chip">{user?.role}</span>
+            <span className="role-chip">{user?.roleLabel || roleName || 'operator'}</span>
           </div>
         </div>
         <nav className="menu modern-menu">
-          {menu.filter((item) => item.roles.includes(user?.role)).map((item) => (
+          {menu.filter((item) => item.roles.includes(roleName)).map((item) => (
             <NavLink key={item.to} to={item.to} end={item.to === '/'}>
               {item.label}
             </NavLink>
