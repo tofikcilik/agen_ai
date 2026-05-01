@@ -7,7 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Customer;
+use App\Models\Village;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 
 class CustomerController extends Controller
 {
@@ -27,9 +30,22 @@ class CustomerController extends Controller
     public function store(StoreCustomerRequest $request): JsonResponse
     {
         $user = $request->user()->loadMissing('role');
-        $this->ensureVillageAccess($user, (int) $request->integer('village_id'));
+        $data = $request->validated();
+        $village = Village::findOrFail($data['village_id']);
 
-        $customer = Customer::create($request->validated());
+        $this->ensureVillageAccess($user, $village->id);
+
+        $customer = DB::transaction(function () use ($data, $village): Customer {
+            $nextSequence = ((int) Customer::where('village_id', $village->id)->lockForUpdate()->max('customer_sequence')) + 1;
+
+            return Customer::create([
+                ...Arr::except($data, ['customer_number', 'customer_sequence']),
+                'customer_sequence' => $nextSequence,
+                'customer_number' => sprintf('%s_%06d', $village->code, $nextSequence),
+                'status' => $data['status'] ?? 'active',
+                'tariff_per_m3' => $data['tariff_per_m3'] ?? 3500,
+            ]);
+        });
 
         return response()->json($customer->load('village.district'), 201);
     }
@@ -38,16 +54,18 @@ class CustomerController extends Controller
     {
         $this->ensureCustomerAccess(request()->user()->loadMissing('role'), $customer);
 
-        return response()->json($customer->load('village.district', 'meterReadings', 'bills'));
+        return response()->json($customer->load('village.district', 'meterReadings', 'bills', 'complaints'));
     }
 
     public function update(UpdateCustomerRequest $request, Customer $customer): JsonResponse
     {
         $user = $request->user()->loadMissing('role');
-        $this->ensureCustomerAccess($user, $customer);
-        $this->ensureVillageAccess($user, (int) $request->integer('village_id'));
+        $data = $request->validated();
 
-        $customer->update($request->validated());
+        $this->ensureCustomerAccess($user, $customer);
+        $this->ensureVillageAccess($user, (int) $data['village_id']);
+
+        $customer->update(Arr::except($data, ['customer_number', 'customer_sequence']));
 
         return response()->json($customer->fresh('village.district'));
     }
