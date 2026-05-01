@@ -15,7 +15,7 @@ class MeterReadingSeeder extends Seeder
 
         $readings = [
             [
-                'customer_number' => 'PLG-0001',
+                'customer_number' => 'DES001_000001',
                 'reading_month' => '2026-05-01',
                 'previous_value' => 120,
                 'current_value' => 148,
@@ -23,7 +23,7 @@ class MeterReadingSeeder extends Seeder
                 'notes' => 'Meter normal',
             ],
             [
-                'customer_number' => 'PLG-0002',
+                'customer_number' => 'DES001_000002',
                 'reading_month' => '2026-05-01',
                 'previous_value' => 90,
                 'current_value' => 112,
