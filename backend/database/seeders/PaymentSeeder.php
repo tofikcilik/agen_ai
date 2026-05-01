@@ -16,7 +16,7 @@ class PaymentSeeder extends Seeder
 
         $payments = [
             [
-                'customer_number' => 'PLG-0001',
+                'customer_number' => 'DES001_000001',
                 'payment_date' => '2026-05-11',
                 'amount_paid' => 50000,
                 'payment_method' => 'transfer',
@@ -25,7 +25,7 @@ class PaymentSeeder extends Seeder
                 'received_by' => $villageOperator->id,
             ],
             [
-                'customer_number' => 'PLG-0002',
+                'customer_number' => 'DES001_000002',
                 'payment_date' => '2026-05-10',
                 'amount_paid' => 77000,
                 'payment_method' => 'cash',
