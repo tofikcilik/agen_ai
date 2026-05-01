@@ -14,9 +14,11 @@ class Customer extends Model
     protected $fillable = [
         'village_id',
         'customer_number',
+        'customer_sequence',
         'name',
         'phone',
-        'address_rt_rw',
+        'rt',
+        'rw',
         'address_detail',
         'latitude',
         'longitude',
@@ -44,5 +46,10 @@ class Customer extends Model
     public function bills(): HasMany
     {
         return $this->hasMany(Bill::class);
+    }
+
+    public function complaints(): HasMany
+    {
+        return $this->hasMany(Complaint::class);
     }
 }
