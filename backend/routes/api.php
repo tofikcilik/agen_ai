@@ -10,6 +10,22 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ReportController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/', function () {
+    return response()->json([
+        'name' => 'Air Bersih Management API',
+        'status' => 'ok',
+        'version' => '0.1.0',
+        'docs' => '/docs/api.md',
+    ]);
+});
+
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'service' => 'backend-api',
+    ]);
+});
+
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function (): void {
