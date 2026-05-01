@@ -1,3 +1,16 @@
+# Docker Compose khusus preview VM GCP.
+# Jalankan dari root repo:
+#   cd /opt/workspace/airbersih/repo/agen_ai
+#   docker compose -f deploy/vm/docker-compose.yml up -d --build
+#
+# Struktur VM yang dipakai:
+#   /opt/workspace/airbersih/repo/agen_ai  -> source Git
+#   /opt/workspace/airbersih/backend       -> runtime Laravel generated
+#
+# Catatan:
+# - Jangan menaruh source code langsung di /opt/workspace/airbersih/backend.
+# - Folder /opt/workspace/airbersih/backend adalah hasil runtime container dan aman dihapus saat reset preview.
+
 services:
   mysql:
     image: mysql:8.4
@@ -46,7 +59,7 @@ services:
       - "8000"
     volumes:
       - ../../backend:/opt/domain-backend:ro
-      - /opt/workspace/airbersih/backend:/var/www/html
+      - ${AIRBERSIH_RUNTIME_ROOT:-/opt/workspace/airbersih}/backend:/var/www/html
     networks:
       - airbersih_internal
       - proxy
@@ -71,6 +84,7 @@ services:
 
 volumes:
   mysql_data:
+    name: airbersih_mysql_data
 
 networks:
   airbersih_internal:
